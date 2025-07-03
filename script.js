@@ -23,7 +23,7 @@ async function getModelMetadata(modelId) {
     return await response.json()
 }
 
-function updateGridForModels() {
+function updateGrid() {
     const cards = [...document.querySelector(".MasonryGrid_grid__6QtWa").children]
 
     cards.forEach(card => {
@@ -131,9 +131,9 @@ function updateGridForModels() {
 
 function runScript() {
     if (window.location.href === "https://civitai.com/models") {
-        updateGridForModels()
+        updateGrid()
     } else if (window.location.href.match(/https:\/\/civitai.com\/collections\/*/)) {
-        updateGridForModels()
+        updateGrid()
     }
 }
 
