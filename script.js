@@ -1,140 +1,199 @@
-function getModelIdFromCard(card) {
-    const anchor = card.querySelector("div:nth-child(1) > a:nth-child(1)")
+const getGrid = (href) => {
+  if (/^https:\/\/civitai.(com|green)\/(models|collections\/\d+|user\/(.+)\/models)$/.test(href)) {
+    return document.querySelector(".MasonryGrid_grid__6QtWa")
+  }
+}
 
-    if (!anchor) {
-        return
+const updateGrid = () => {
+  const url = window.location.href
+  const grid = getGrid(url)
+  const cards = [...grid.children]
+
+  cards.forEach((card) => {
+    const linkOrClick = card.querySelector("div:nth-child(1) > div:nth-child(2)")
+
+    if (!linkOrClick) {
+      if (card.dataset.updated === "true") {
+        delete card.dataset.updated
+      }
+
+      return
     }
 
-    const match = anchor.href.match(/\/models\/(\d+)\//)
-
-    if (!match) {
-        return
+    if (card.dataset.updated === "true") {
+      return
     }
 
-    return match[1]
+    card.dataset.updated = "true"
+
+    const button = createDownloadButton(card)
+    card.querySelector("div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2)").append(button)
+  })
 }
 
-async function getModelMetadata(modelId) {
-    const response = await fetch(`https://civitai.com/api/v1/models/${modelId}`)
+const createDownloadButton = (card) => {
+  const button = document.createElement("button")
+  button.textContent = "Download"
+  button.style.backgroundColor = "#0000ff"
+  button.addEventListener("click", async () => {
+    const modelId = getModelId(card)
+    const modelMetadata = await getModelMetadata(modelId)
 
-    if (!response.ok)
-        throw new Error()
+    if (modelMetadata.modelVersions.length === 1) {
+      const anchor = document.createElement("a")
+      anchor.href = modelMetadata.modelVersions[0].downloadUrl
+      anchor.click()
 
-    return await response.json()
-}
-
-function updateGrid() {
-    const cards = [...document.querySelector(".MasonryGrid_grid__6QtWa").children]
-
-    cards.forEach(card => {
-        if (card.dataset.updated === "true") {
-            return
-        }
-
-        card.dataset.updated = "true"
-
-        const button = document.createElement("button")
-        button.textContent = "Download"
-        button.style.backgroundColor = "#0000ff"
-        button.style.padding = "8px"
-        button.addEventListener("click", () => {
-            modelId = getModelIdFromCard(card)
-
-            getModelMetadata(modelId)
-                .then((modelMetadata) => {
-                    const button = document.createElement("button")
-                    button.textContent = "Close"
-                    button.style.backgroundColor = "#ffffff"
-                    button.style.color = "#000000"
-                    button.style.padding = "8px"
-                    button.addEventListener("click", () => {
-                        modal.remove()
-                    })
-
-                    const theadCol1 = document.createElement("th")
-                    theadCol1.textContent = "Version"
-                    theadCol1.style.border = "4px solid white"
-                    
-                    const theadCol2 = document.createElement("th")
-                    theadCol2.textContent = "Published at"
-                    theadCol2.style.border = "4px solid white"
-                    
-                    const theadCol3 = document.createElement("th")
-                    theadCol3.textContent = "Download"
-                    theadCol3.style.border = "4px solid white"
-                    
-                    const thead = document.createElement("thead")
-                    thead.appendChild(theadCol1)
-                    thead.appendChild(theadCol2)
-                    thead.appendChild(theadCol3)
-
-                    const tbody = document.createElement("tbody")
-                    
-                    modelMetadata.modelVersions.forEach((modelVersion) => {
-                        const tdCol1 = document.createElement("td")
-                        tdCol1.textContent = modelVersion.name
-                        tdCol1.style.padding = "8px"
-                        tdCol1.style.border = "4px solid white"
-
-                        const tdCol2 = document.createElement("td")
-                        tdCol2.textContent = modelVersion.publishedAt
-                        tdCol2.style.padding = "8px"
-                        tdCol2.style.border = "4px solid white"
-
-                        const anchor = document.createElement("a")
-                        anchor.textContent = "Download"
-                        anchor.href = modelVersion.downloadUrl
-                        anchor.target = "_blank"
-                        anchor.rel = "noopener noreferrer"
-                        anchor.style.backgroundColor = "#0000ff"
-                        anchor.style.padding = "8px"
-                        
-                        const tdCol3 = document.createElement("td")
-                        tdCol3.appendChild(anchor)
-                        tdCol3.style.padding = "8px"
-                        tdCol3.style.border = "4px solid white"
-                        
-                        const tr = document.createElement("tr")
-                        tr.appendChild(tdCol1)
-                        tr.appendChild(tdCol2)
-                        tr.appendChild(tdCol3)
-                        
-                        tbody.appendChild(tr)
-                    })
-
-                    const table = document.createElement("table")
-                    table.appendChild(thead)
-                    table.appendChild(tbody)
-                    table.style.borderCollapse = "collapse"
-
-                    const modal = document.createElement("div")
-                    modal.append(button)
-                    modal.append(table)
-                    modal.style.position = "fixed"
-                    modal.style.top = "0"
-                    modal.style.right = "0"
-                    modal.style.bottom = "0"
-                    modal.style.left = "0"
-                    modal.style.zIndex = "199"
-                    modal.style.backgroundColor = "rgba(0, 0, 0, 0.75)"
-                    modal.style.color = "#ffffff"
-                    modal.style.padding = "16px"
-                    
-                    document.body.appendChild(modal)
-                })
-                .catch(() => {})
-        })
-
-        card.querySelector("div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2)").append(button)
-    })
-}
-
-function runScript() {
-    if (window.location.href === "https://civitai.com/models") {
-        updateGrid()
-    } else if (window.location.href.match(/https:\/\/civitai.com\/collections\/*/)) {
-        updateGrid()
+      return
     }
+
+    const div = createModelVersionDiv(modelMetadata)
+    document.body.append(div)
+  })
+
+  return button
 }
 
-runScript()
+const createModelVersionDiv = (modelMetadata) => {
+  const table = createModelVersionTable(modelMetadata)
+  table.addEventListener("click", (event) => {
+    event.stopPropagation()
+  })
+  
+  const div = document.createElement("div")
+  div.style.position = "fixed"
+  div.style.top = "0"
+  div.style.right = "0"
+  div.style.bottom = "0"
+  div.style.left = "0"
+  div.style.backgroundColor = "rgba(0, 0, 0, 0.5)"
+  div.style.zIndex = "199"
+  div.style.display = "flex"
+  div.style.justifyContent = "center"
+  div.style.alignItems = "center"
+  div.addEventListener("click", () => {
+    div.remove()
+  })
+  div.append(table)
+
+  return div
+}
+
+const createModelVersionTable = (modelMetadata) => {
+  const th1 = document.createElement("th")
+  th1.textContent = "Name"
+
+  const th2 = document.createElement("th")
+  th2.textContent = "Published at"
+  
+  const th3 = document.createElement("th")
+  th3.textContent = ""
+
+  const thead = document.createElement("thead")
+  thead.append(th1)
+  thead.append(th2)
+  thead.append(th3)
+
+  const tbody = document.createElement("tbody")
+
+  modelMetadata.modelVersions.forEach((modelVersion) => {
+    const td1 = document.createElement("td")
+    td1.textContent = modelVersion.name
+
+    const publishedAt = new Date(modelVersion.publishedAt)
+
+    const td2 = document.createElement("td")
+    td2.textContent = publishedAt.toLocaleString()
+
+    const anchor = document.createElement("a")
+    anchor.textContent = "Download"
+    anchor.href = modelVersion.downloadUrl
+    anchor.style.backgroundColor = "#0000ff"
+    anchor.style.color = "#ffffff"
+
+    const td3 = document.createElement("td")
+    td3.append(anchor)
+
+    const tr = document.createElement("tr")
+    tr.append(td1)
+    tr.append(td2)
+    tr.append(td3)
+
+    tbody.append(tr)
+  })
+
+  const table = document.createElement("table")
+  table.style.backgroundColor = "#ffffff"
+  table.append(thead)
+  table.append(tbody)
+
+  return table
+}
+
+const getModelId = (card) => {
+  const anchor = card.querySelector("div:nth-child(1) > a:nth-child(1)")
+
+  if (!anchor) {
+    return
+  }
+
+  const match = anchor.href.match(/https:\/\/civitai.(com|green)\/models\/(\d+)/)
+  
+  return match[2]
+}
+
+const getModelMetadata = async (modelId) => {
+  const response = await fetch(`https://civitai.com/api/v1/models/${modelId}`)
+
+  if (!response.ok) {
+    throw new Error()
+  }
+
+  return response.json()
+}
+
+// TODO: Download all models in a collection.
+// (async () => {
+//   const grid = document.querySelector(".MasonryGrid_grid__6QtWa")
+//   const cards = [...grid.children]
+
+// 	for (const card of cards) {
+//     const header = card.querySelector(".AspectRatioImageCard_header__Mmd__")
+
+// 		if (!header) {
+// 			continue
+// 		}
+
+// 		const dropdownButton = header.children.length === 1 ? header.querySelector("div:first-child > div:nth-child(2) > button:first-child") : header.querySelector("div:nth-child(2) > button:first-child")
+// 		dropdownButton.click()
+
+// 		await new Promise((resolve) => { setTimeout(resolve, 500) })
+
+// 		const dropdown = document.querySelector("#" + dropdownButton.id.match(/mantine-(.{9})-/)[0] + "dropdown")
+
+// 		const removeFromThisCollectionButton = dropdown.children.length === 8 ? dropdown.querySelector("button:nth-child(7)") : dropdown.querySelector("button:nth-child(5)")
+// 		removeFromThisCollectionButton.click()
+
+// 		await new Promise((resolve) => { setTimeout(resolve, 10000) })
+//   }
+
+// 	console.log("Completed.")
+// })()
+
+const main = () => {
+  console.log("Civitai Extension: Running")
+
+  const url = window.location.href
+  const grid = getGrid(url)
+
+  updateGrid()
+
+  const observer = new MutationObserver(() => {
+    updateGrid()
+  })
+  observer.observe(grid, { childList: true, subtree: true })
+
+  console.log("Civitai Extension: Observing")
+}
+
+main()
