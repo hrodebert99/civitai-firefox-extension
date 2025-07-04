@@ -1,14 +1,13 @@
 {
     "manifest_version": 2,
-    "name": "Civitai Firefox Extension",
-    "version": "0.1",
+    "name": "Extension",
+    "version": "1.0",
     "permissions": [
-        "tabs",
         "activeTab",
-        "https://civitai.com/*"
+        "tabs"
     ],
     "browser_action": {
-        "default_title": "Civitai Firefox Extension"
+        "default_title": "Enable extension."
     },
     "background": {
         "scripts": [
