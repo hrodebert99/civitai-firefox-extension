@@ -9,12 +9,41 @@ const main = () => {
         bodyElementObserver.disconnect()
 
         const nextObserver = new MutationObserver(() => {
-            if (/^https:\/\/civitai.com\/(models|user\/.+\/models|collections\/\d+)$/.test(window.location.href) === false) {
+            if (/^https:\/\/civitai.com\/(models|user\/.+|user\/.+\/models|collections\/\d+)$/.test(window.location.href) === false) {
                 return
             }
 
-            const gridElement = document.querySelector(".MasonryGrid_grid__6QtWa")
-            
+            let gridElement = null
+
+            if (/^https:\/\/civitai.com\/(models|user\/.+\/models|collections\/\d+)$/.test(window.location.href)) {
+                gridElement = document.querySelector(".MasonryGrid_grid__6QtWa")
+            } else if (/^https:\/\/civitai.com\/user\/.+$/.test(window.location.href)) {
+                // TODO
+
+                // const profileSectionElements = [...document.querySelectorAll(".ProfileSection_profileSection__MqqfN")]
+
+                // if (profileSectionElements.length === 0) {
+                //     return
+                // }
+
+                // profileSectionElements.forEach((profileSectionElement) => {
+                //     const titleElement = profileSectionElement.querySelector(".ProfileSection_title__SlyX6")
+
+                //     if (titleElement === null) {
+                //         return
+                //     }
+
+                //     if ([
+                //         "Models",
+                //         "Most popular models"
+                //     ].includes(titleElement.textContent)) {
+                //         console.log(titleElement.textContent)
+                //     }
+
+                //     gridElement = profileSectionElement.querySelector(".ShowcaseGrid_grid__e1fhW")
+                // })
+            }
+
             if (gridElement === null) {
                 return
             }
@@ -42,12 +71,14 @@ const main = () => {
                     if (cardElement.hasAttribute("data-civitai-firefox-extension-observer")) {
                         return
                     }
-                    
+
                     cardElement.setAttribute("data-civitai-firefox-extension-observer", true)
 
                     const downloadButtonElement = document.createElement("button")
                     downloadButtonElement.className = "civitai-firefox-extension-download-button"
-                    downloadButtonElement.style.backgroundColor = "#88ccff"
+                    downloadButtonElement.style.backgroundColor = "#4488ff"
+                    downloadButtonElement.style.padding = "0px 8px"
+                    downloadButtonElement.style.borderRadius = "16px"
                     downloadButtonElement.textContent = "Download"
                     downloadButtonElement.addEventListener("click", () => {
                         console.log(contentElement.querySelector(".AspectRatioImageCard_linkOrClick__d_K_4").href)
@@ -55,7 +86,12 @@ const main = () => {
                         // TODO
                     })
 
-                    const buttonContainerElement = contentElement.querySelector(".AspectRatioImageCard_header__Mmd__ > div:first-child > div:nth-child(2)")
+                    let buttonContainerElement = contentElement.querySelector(".AspectRatioImageCard_header__Mmd__ > div:first-child > div:nth-child(2)")
+
+                    if (buttonContainerElement === null) {
+                        buttonContainerElement = contentElement.querySelector(".AspectRatioImageCard_header__Mmd__ > div:nth-child(2)")
+                    }
+
                     buttonContainerElement.append(downloadButtonElement)
                 })
             })
