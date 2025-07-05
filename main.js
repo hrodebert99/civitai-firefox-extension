@@ -18,7 +18,7 @@ const main = () => {
             if (/^https:\/\/civitai.com\/(models|user\/.+\/models|collections\/\d+)$/.test(window.location.href)) {
                 gridElement = document.querySelector(".MasonryGrid_grid__6QtWa")
             } else if (/^https:\/\/civitai.com\/user\/.+$/.test(window.location.href)) {
-                // TODO
+                // TODO: Show the download button for each card in the profile section element if its text content is "Most popular models" or "Models".
 
                 // const profileSectionElements = [...document.querySelectorAll(".ProfileSection_profileSection__MqqfN")]
 
@@ -80,10 +80,44 @@ const main = () => {
                     downloadButtonElement.style.padding = "0px 8px"
                     downloadButtonElement.style.borderRadius = "16px"
                     downloadButtonElement.textContent = "Download"
-                    downloadButtonElement.addEventListener("click", () => {
-                        console.log(contentElement.querySelector(".AspectRatioImageCard_linkOrClick__d_K_4").href)
+                    downloadButtonElement.addEventListener("click", async () => {
+                        const getModelId = (url) => {
+                            const match = url.match(/^https:\/\/civitai.com\/models\/(\d+)\/.+$/)
 
-                        // TODO
+                            if (match === null) {
+                                return 0
+                            }
+
+                            return match[1]
+                        }
+                        
+                        const modelId = getModelId(contentElement.querySelector(".AspectRatioImageCard_linkOrClick__d_K_4").href)
+
+                        // console.log(modelId)
+
+                        const getModelMetadata = async (modelId) => {
+                            const response = await fetch(`https://civitai.com/api/v1/models/${modelId}`)
+
+                            if (!response.ok) {
+                                throw new Error()
+                            }
+
+                            return response.json()
+                        }
+
+                        let modelMetadata = await getModelMetadata(modelId)
+                        
+                        if (modelMetadata.modelVersions.length === 1) {
+                            const anchorElement = document.createElement("a")
+                            anchorElement.href = modelMetadata.modelVersions[0].downloadUrl
+                            anchorElement.target = "_blank"
+                            anchorElement.rel = "noopener"
+                            anchorElement.click()
+
+                            return
+                        }
+
+                        // TODO: Show a modal with a table contains multiple model versions with a download button each.
                     })
 
                     let buttonContainerElement = contentElement.querySelector(".AspectRatioImageCard_header__Mmd__ > div:first-child > div:nth-child(2)")
