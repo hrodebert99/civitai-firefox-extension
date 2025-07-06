@@ -211,9 +211,13 @@ const updateCardElement = (cardElement) => {
             modalElement.addEventListener("click", () => {
                 modalElement.remove()
             })
+
+            const titleElement = document.createElement("p")
+            titleElement.textContent = "Model Versions"
+            titleElement.style.fontWeight = "bold"
             
             const containerElement = document.createElement("div")
-            containerElement.style.backgroundColor = "#333333"
+            containerElement.style.backgroundColor = "#444444"
             containerElement.style.textAlign = "center"
             containerElement.style.padding = "1rem 2rem"
             containerElement.style.borderRadius = "1rem"
@@ -225,11 +229,7 @@ const updateCardElement = (cardElement) => {
             containerElement.addEventListener("click", (event) => {
                 event.stopPropagation()
             })
-
-            const titleElement = document.createElement("p")
-            titleElement.textContent = "Model Versions"
-            titleElement.style.fontWeight = "bold"
-
+            
             containerElement.append(titleElement)
 
             modelMetadata.modelVersions.forEach((modelVersion) => {
