@@ -55,7 +55,7 @@ const handleNextElementObserverCallback = () => {
 
     if (/^https:\/\/civitai.com\/(models(\?[a-zA-Z0-9=+&%]+)?|tag\/[a-zA-Z0-9=+&%]+|user\/[a-zA-Z0-9_]+\/models(\?[a-zA-Z0-9=+&%]+)?|collections\/[0-9]+(\?[a-zA-Z0-9=+&%]+)?)?$/.test(url) === true) {
         const gridElement = document.querySelector(".MasonryGrid_grid__6QtWa")
-        
+
         if (gridElement === null) {
             return
         }
@@ -152,43 +152,45 @@ const handleGridObserverCallback = (gridElement) => {
         downloadButtonElement.style.backgroundColor = "#4488ff"
         downloadButtonElement.style.padding = "0px 8px"
         downloadButtonElement.style.borderRadius = "16px"
-        // downloadButtonElement.addEventListener("click", async () => {
-        //     const getModelId = (url) => {
-        //         const match = url.match(/^https:\/\/civitai.com\/models\/(\d+)\/.+$/)
+        downloadButtonElement.addEventListener("click", async () => {
+            const linkOrClickElement = contentElement.querySelector(".AspectRatioImageCard_linkOrClick__d_K_4")
 
-        //         if (match === null) {
-        //             return 0
-        //         }
+            const getModelId = (url) => {
+                const match = url.match(/^https:\/\/civitai.com\/models\/(\d+)\/[a-z0-9\-]+$/)
 
-        //         return match[1]
-        //     }
+                // if (match === null) {
+                //     return 0
+                // }
 
-        //     const modelId = getModelId(contentElement.querySelector(".AspectRatioImageCard_linkOrClick__d_K_4").href)
+                return match[1]
+            }
 
-        //     const getModelMetadata = async (modelId) => {
-        //         const response = await fetch(`https://civitai.com/api/v1/models/${modelId}`)
+            const modelId = getModelId(linkOrClickElement.href)
 
-        //         if (!response.ok) {
-        //             throw new Error()
-        //         }
+            const getModelMetadata = async (modelId) => {
+                const response = await fetch(`https://civitai.com/api/v1/models/${modelId}`)
 
-        //         return response.json()
-        //     }
+                if (!response.ok) {
+                    cardElement.removeAttribute("data-civitai-firefox-extension-observe")
 
-        //     let modelMetadata = await getModelMetadata(modelId)
+                    throw new Error()
+                }
 
-        //     if (modelMetadata.modelVersions.length === 1) {
-        //         const anchorElement = document.createElement("a")
-        //         anchorElement.href = modelMetadata.modelVersions[0].downloadUrl
-        //         anchorElement.target = "_blank"
-        //         anchorElement.rel = "noopener"
-        //         anchorElement.click()
+                return await response.json()
+            }
 
-        //         return
-        //     }
+            let modelMetadata = await getModelMetadata(modelId)
 
-        //     // TODO: Show a modal with a table contains multiple model versions with a download button each.
-        // })
+            if (modelMetadata.modelVersions.length === 1) {
+                const anchorElement = document.createElement("a")
+                anchorElement.href = modelMetadata.modelVersions[0].downloadUrl
+                // anchorElement.target = "_blank"
+                // anchorElement.rel = "noopener"
+                anchorElement.click()
+            } else {
+                // TODO: Display a modal with multiple model verions in a table with a clickable download button.
+            }
+        })
 
         let buttonContainerElement = contentElement.querySelector(".AspectRatioImageCard_header__Mmd__ > div:first-child > div:last-child")
 
