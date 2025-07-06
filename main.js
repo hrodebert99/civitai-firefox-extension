@@ -126,80 +126,144 @@ const createGridElementObserver = (gridElement) => {
 const handleGridObserverCallback = (gridElement) => {
     const cardElementArray = [...gridElement.children]
 
-    cardElementArray.forEach((cardElement) => {
-        const contentElement = cardElement.querySelector(".AspectRatioImageCard_content__IGj_A")
+    cardElementArray.forEach(updateCardElement)
+}
 
-        if (contentElement === null) {
-            return
-        }
+const updateCardElement = (cardElement) => {
+    const contentElement = cardElement.querySelector(".AspectRatioImageCard_content__IGj_A")
 
-        if (contentElement.children.length === 0) {
-            if (cardElement.hasAttribute("data-civitai-firefox-extension-observe")) {
-                cardElement.removeAttribute("data-civitai-firefox-extension-observe")
-            }
+    if (contentElement === null) {
+        return
+    }
 
-            return
-        }
-
+    if (contentElement.children.length === 0) {
         if (cardElement.hasAttribute("data-civitai-firefox-extension-observe")) {
-            return
+            cardElement.removeAttribute("data-civitai-firefox-extension-observe")
         }
 
-        cardElement.setAttribute("data-civitai-firefox-extension-observe", true)
+        return
+    }
 
-        const downloadButtonElement = document.createElement("button")
-        downloadButtonElement.textContent = "Download"
-        downloadButtonElement.style.backgroundColor = "#4488ff"
-        downloadButtonElement.style.padding = "0px 8px"
-        downloadButtonElement.style.borderRadius = "16px"
-        downloadButtonElement.addEventListener("click", async () => {
-            const linkOrClickElement = contentElement.querySelector(".AspectRatioImageCard_linkOrClick__d_K_4")
+    if (cardElement.hasAttribute("data-civitai-firefox-extension-observe")) {
+        return
+    }
 
-            const getModelId = (url) => {
-                const match = url.match(/^https:\/\/civitai.com\/models\/(\d+)\/[a-z0-9\-]+$/)
+    cardElement.setAttribute("data-civitai-firefox-extension-observe", true)
 
-                // if (match === null) {
-                //     return 0
-                // }
+    const downloadButtonElement = document.createElement("button")
+    downloadButtonElement.textContent = "Download"
+    downloadButtonElement.style.backgroundColor = "#4488ff"
+    downloadButtonElement.style.padding = "0 0.5rem"
+    downloadButtonElement.style.borderRadius = "1rem"
+    downloadButtonElement.addEventListener("click", async () => {
+        const linkOrClickElement = contentElement.querySelector(".AspectRatioImageCard_linkOrClick__d_K_4")
 
-                return match[1]
-            }
+        const getModelId = (url) => {
+            const match = url.match(/^https:\/\/civitai.com\/models\/(\d+)\/[a-z0-9\-]+$/)
 
-            const modelId = getModelId(linkOrClickElement.href)
+            // if (match === null) {
+            //     return 0
+            // }
 
-            const getModelMetadata = async (modelId) => {
-                const response = await fetch(`https://civitai.com/api/v1/models/${modelId}`)
-
-                if (!response.ok) {
-                    cardElement.removeAttribute("data-civitai-firefox-extension-observe")
-
-                    throw new Error()
-                }
-
-                return await response.json()
-            }
-
-            let modelMetadata = await getModelMetadata(modelId)
-
-            if (modelMetadata.modelVersions.length === 1) {
-                const anchorElement = document.createElement("a")
-                anchorElement.href = modelMetadata.modelVersions[0].downloadUrl
-                // anchorElement.target = "_blank"
-                // anchorElement.rel = "noopener"
-                anchorElement.click()
-            } else {
-                // TODO: Display a modal with multiple model verions in a table with a clickable download button.
-            }
-        })
-
-        let buttonContainerElement = contentElement.querySelector(".AspectRatioImageCard_header__Mmd__ > div:first-child > div:last-child")
-
-        if (buttonContainerElement === null) {
-            buttonContainerElement = contentElement.querySelector(".AspectRatioImageCard_header__Mmd__ > div:last-child > div:last-child")
+            return match[1]
         }
 
-        buttonContainerElement.append(downloadButtonElement)
+        const modelId = getModelId(linkOrClickElement.href)
+
+        const getModelMetadata = async (modelId) => {
+            const response = await fetch(`https://civitai.com/api/v1/models/${modelId}`)
+
+            if (!response.ok) {
+                cardElement.removeAttribute("data-civitai-firefox-extension-observe")
+
+                throw new Error()
+            }
+
+            return await response.json()
+        }
+
+        let modelMetadata = await getModelMetadata(modelId)
+
+        if (modelMetadata.modelVersions.length === 1) {
+            const anchorElement = document.createElement("a")
+            anchorElement.href = modelMetadata.modelVersions[0].downloadUrl
+            // anchorElement.target = "_blank"
+            // anchorElement.rel = "noopener"
+            anchorElement.click()
+        } else {
+            const instructionElement = document.createElement("p")
+            instructionElement.textContent = "Click anywhere to close."
+
+            const modalElement = document.createElement("div")
+            modalElement.style.backgroundColor = "rgba(0, 0, 0, 0.8)"
+            modalElement.style.color = "#ffffff"
+            modalElement.style.position = "fixed"
+            modalElement.style.top = "0"
+            modalElement.style.right = "0"
+            modalElement.style.bottom = "0"
+            modalElement.style.left = "0"
+            modalElement.style.zIndex = "199"
+            modalElement.style.display = "flex"
+            modalElement.style.flexDirection = "column"
+            modalElement.style.justifyContent = "center"
+            modalElement.style.alignItems = "center"
+            modalElement.style.gap = "1rem"
+            modalElement.addEventListener("click", () => {
+                modalElement.remove()
+            })
+            
+            const containerElement = document.createElement("div")
+            containerElement.style.backgroundColor = "#333333"
+            containerElement.style.textAlign = "center"
+            containerElement.style.padding = "1rem 2rem"
+            containerElement.style.borderRadius = "1rem"
+            containerElement.style.display = "flex"
+            containerElement.style.flexDirection = "column"
+            containerElement.style.justifyContent = "center"
+            containerElement.style.alignItems = "center"
+            containerElement.style.gap = "1rem"
+            containerElement.addEventListener("click", (event) => {
+                event.stopPropagation()
+            })
+
+            const titleElement = document.createElement("p")
+            titleElement.textContent = "Model Versions"
+            titleElement.style.fontWeight = "bold"
+
+            containerElement.append(titleElement)
+
+            modelMetadata.modelVersions.forEach((modelVersion) => {
+                const downloadButtonElement = document.createElement("button")
+                downloadButtonElement.textContent = modelVersion.name
+                downloadButtonElement.style.backgroundColor = "#4488ff"
+                downloadButtonElement.style.width = "fit-content"
+                downloadButtonElement.style.padding = "0 0.5rem"
+                downloadButtonElement.style.borderRadius = "1rem"
+                downloadButtonElement.addEventListener("click", async () => {
+                    const anchorElement = document.createElement("a")
+                    anchorElement.href = modelMetadata.modelVersions[0].downloadUrl
+                    // anchorElement.target = "_blank"
+                    // anchorElement.rel = "noopener"
+                    anchorElement.click()
+                })
+
+                containerElement.append(downloadButtonElement)
+            })
+
+            modalElement.append(instructionElement)
+            modalElement.append(containerElement)
+
+            document.body.append(modalElement)
+        }
     })
+
+    let buttonContainerElement = contentElement.querySelector(".AspectRatioImageCard_header__Mmd__ > div:first-child > div:last-child")
+
+    if (buttonContainerElement === null) {
+        buttonContainerElement = contentElement.querySelector(".AspectRatioImageCard_header__Mmd__ > div:last-child > div:last-child")
+    }
+
+    buttonContainerElement.append(downloadButtonElement)
 }
 
 main()
