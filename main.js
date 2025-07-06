@@ -98,11 +98,11 @@ const handleNextElementObserverCallback = () => {
     }
 
     gridElements.forEach((gridElement) => {
-        if (gridElement.hasAttribute("data-civitai-firefox-extension-observe") === true) {
+        if (gridElement.hasAttribute("data-civitai-extension-for-firefox-observe") === true) {
             return
         }
 
-        gridElement.setAttribute("data-civitai-firefox-extension-observe", true)
+        gridElement.setAttribute("data-civitai-extension-for-firefox-observe", true)
 
         createGridElementObserver(gridElement)
     })
@@ -137,18 +137,18 @@ const updateCardElement = (cardElement) => {
     }
 
     if (contentElement.children.length === 0) {
-        if (cardElement.hasAttribute("data-civitai-firefox-extension-observe")) {
-            cardElement.removeAttribute("data-civitai-firefox-extension-observe")
+        if (cardElement.hasAttribute("data-civitai-extension-for-firefox-observe")) {
+            cardElement.removeAttribute("data-civitai-extension-for-firefox-observe")
         }
 
         return
     }
 
-    if (cardElement.hasAttribute("data-civitai-firefox-extension-observe")) {
+    if (cardElement.hasAttribute("data-civitai-extension-for-firefox-observe")) {
         return
     }
 
-    cardElement.setAttribute("data-civitai-firefox-extension-observe", true)
+    cardElement.setAttribute("data-civitai-extension-for-firefox-observe", true)
 
     const downloadButtonElement = document.createElement("button")
     downloadButtonElement.textContent = "Download"
@@ -174,7 +174,7 @@ const updateCardElement = (cardElement) => {
             const response = await fetch(`https://civitai.com/api/v1/models/${modelId}`)
 
             if (!response.ok) {
-                cardElement.removeAttribute("data-civitai-firefox-extension-observe")
+                cardElement.removeAttribute("data-civitai-extension-for-firefox-observe")
 
                 throw new Error()
             }
@@ -208,6 +208,7 @@ const updateCardElement = (cardElement) => {
             modalElement.style.justifyContent = "center"
             modalElement.style.alignItems = "center"
             modalElement.style.gap = "1rem"
+            modalElement.setAttribute("data-civitai-extension-for-firefox", true)
             modalElement.addEventListener("click", () => {
                 modalElement.remove()
             })
