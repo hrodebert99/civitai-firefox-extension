@@ -47,13 +47,13 @@ const createNextElementObserver = (nextElement) => {
 const handleNextElementObserverCallback = () => {
     const url = window.location.href
 
-    if (/^https:\/\/civitai.com\/(models(\?[a-zA-Z0-9=+&%]+)?|tag\/[a-zA-Z0-9=+&%]+|user\/[a-zA-Z0-9_]+(\/models(\?[a-zA-Z0-9=+&%]+)?)?|collections\/[0-9]+(\?[a-zA-Z0-9=+&%]+)?)?$/.test(url) === false) {
+    if (/^https:\/\/civitai.com\/(models(\?[a-zA-Z0-9=+&%]+)?|tag\/[a-zA-Z0-9=+&%]+|collections\/[0-9]+(\?[a-zA-Z0-9=+&%]+)?|user\/[a-zA-Z0-9_]+(\/models(\?[a-zA-Z0-9=+&%]+)?)?|search\/models\?[a-zA-Z0-9=+&%_]+)?$/.test(url) === false) {
         return
     }
 
     let gridElements = []
 
-    if (/^https:\/\/civitai.com\/(models(\?[a-zA-Z0-9=+&%]+)?|tag\/[a-zA-Z0-9=+&%]+|user\/[a-zA-Z0-9_]+\/models(\?[a-zA-Z0-9=+&%]+)?|collections\/[0-9]+(\?[a-zA-Z0-9=+&%]+)?)?$/.test(url) === true) {
+    if (/^https:\/\/civitai.com\/(models(\?[a-zA-Z0-9=+&%]+)?|tag\/[a-zA-Z0-9=+&%]+|collections\/[0-9]+(\?[a-zA-Z0-9=+&%]+)?|user\/[a-zA-Z0-9_]+\/models(\?[a-zA-Z0-9=+&%]+)?|search\/models\?[a-zA-Z0-9=+&%_]+)?$/.test(url) === true) {
         const gridElement = document.querySelector(".MasonryGrid_grid__6QtWa")
 
         if (gridElement === null) {
