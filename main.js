@@ -124,6 +124,10 @@ function handleNextElementObserverCallback(nextElement) {
 
             const gridElement = queriesElement.querySelector("div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1)")
 
+            if (gridElement === null) {
+                return
+            }
+
             gridElementArray.push(gridElement)
         })
     } else if (/^https:\/\/civitai.com\/user\/[a-zA-Z0-9_]+$/.test(url) === true) {
@@ -151,6 +155,10 @@ function handleNextElementObserverCallback(nextElement) {
             }
 
             const gridElement = profileSectionElement.querySelector(".ShowcaseGrid_grid__e1fhW")
+
+            if (gridElement === null) {
+                return
+            }
 
             gridElementArray.push(gridElement)
         })
@@ -195,7 +203,48 @@ function createGridElementObserver(gridElement) {
 }
 
 function handleGridElementObserverCallback(gridElement) {
-    // TODO
+    const cardElementArray = [...gridElement.children]
+
+    cardElementArray.forEach(updateCardElement)
+}
+
+function updateCardElement(cardElement) {
+    const contentElement = cardElement.querySelector(".AspectRatioImageCard_content__IGj_A")
+
+    if (contentElement === null) {
+        return
+    }
+
+    if (contentElement.children.length === 0) {
+        if (cardElement.hasAttribute("data-civitai-extension-for-firefox-observe")) {
+            cardElement.removeAttribute("data-civitai-extension-for-firefox-observe")
+        }
+        
+        return
+    }
+
+    if (cardElement.hasAttribute("data-civitai-extension-for-firefox-observe")) {
+        return
+    }
+
+    cardElement.setAttribute("data-civitai-extension-for-firefox-observe", true)
+
+    const downloadButtonElement = document.createElement("button")
+    downloadButtonElement.textContent = "Download"
+    downloadButtonElement.style.backgroundColor = "#4488ff"
+    downloadButtonElement.style.padding = "0 0.5rem"
+    downloadButtonElement.style.borderRadius = "1rem"
+    downloadButtonElement.addEventListener("click", function() {
+        // TODO
+    })
+    
+    let buttonContainerElement = contentElement.querySelector(".AspectRatioImageCard_header__Mmd__ > div:nth-child(1) > div:nth-child(2)")
+
+    if (buttonContainerElement === null) {
+        buttonContainerElement = contentElement.querySelector(".AspectRatioImageCard_header__Mmd__ > div:nth-child(2) > div:nth-child(2)")
+    }
+
+    buttonContainerElement.append(downloadButtonElement)
 }
 
 main()
