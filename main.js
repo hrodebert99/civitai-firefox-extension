@@ -205,7 +205,9 @@ function createGridElementObserver(gridElement) {
 function handleGridElementObserverCallback(gridElement) {
     const cardElementArray = [...gridElement.children]
 
-    cardElementArray.forEach(updateCardElement)
+    cardElementArray.forEach(function(cardElement) {
+        updateCardElement(cardElement)
+    })
 }
 
 function updateCardElement(cardElement) {
@@ -235,7 +237,7 @@ function updateCardElement(cardElement) {
     downloadButtonElement.style.padding = "0 0.5rem"
     downloadButtonElement.style.borderRadius = "1rem"
     downloadButtonElement.addEventListener("click", function() {
-        // TODO
+        handleDownloadButtonElementClickEvent()
     })
     
     let buttonContainerElement = contentElement.querySelector(".AspectRatioImageCard_header__Mmd__ > div:nth-child(1) > div:nth-child(2)")
@@ -245,6 +247,10 @@ function updateCardElement(cardElement) {
     }
 
     buttonContainerElement.append(downloadButtonElement)
+}
+
+function handleDownloadButtonElementClickEvent() {
+    // TODO
 }
 
 main()
