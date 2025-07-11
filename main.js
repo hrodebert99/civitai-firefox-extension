@@ -58,14 +58,10 @@ function createBodyElementObserver() {
         handleBodyElementObserverCallback(bodyElementObserver)
     })
 
-    const bodyElement = document.body
-
-    bodyElementObserver.observe(bodyElement, {
+    bodyElementObserver.observe(document.body, {
         childList: true,
         subtree: true
     })
-
-    return bodyElementObserver
 }
 
 function handleBodyElementObserverCallback(bodyElementObserver) {
@@ -81,9 +77,7 @@ function handleBodyElementObserverCallback(bodyElementObserver) {
 }
 
 function createNextElementObserver(nextElement) {
-    let nextElementObserver = null
-    
-    nextElementObserver = new MutationObserver(function() {
+    const nextElementObserver = new MutationObserver(function() {
         handleNextElementObserverCallback(nextElement)
     })
 
@@ -91,8 +85,6 @@ function createNextElementObserver(nextElement) {
         childList: true,
         subtree: true
     })
-
-    return nextElementObserver
 }
 
 function handleNextElementObserverCallback(nextElement) {
@@ -106,10 +98,6 @@ function handleNextElementObserverCallback(nextElement) {
 
     if (/^https:\/\/civitai.com\/models\/[0-9]+(\?modelVersionId=[0-9]+|\/[a-zA-Z0-9%&-_=+'.]+(\?modelVersionId=[0-9]+)?)?$/.test(url) === true) {
         const queriesElementArray = nextElement.querySelectorAll(".MasonryContainer_queries__bS_ak")
-
-        if (queriesElementArray.length === 0) {
-            return
-        }
 
         queriesElementArray.forEach(function(queriesElement) {
             const titleElement = queriesElement.querySelector("div:nth-child(1) > div:nth-child(1) > h2 > div:nth-child(1)")
@@ -237,7 +225,7 @@ function updateCardElement(cardElement) {
     downloadButtonElement.style.padding = "0 0.5rem"
     downloadButtonElement.style.borderRadius = "1rem"
     downloadButtonElement.addEventListener("click", function() {
-        handleDownloadButtonElementClickEvent()
+        handleDownloadButtonElementClickEvent(contentElement)
     })
     
     let buttonContainerElement = contentElement.querySelector(".AspectRatioImageCard_header__Mmd__ > div:nth-child(1) > div:nth-child(2)")
@@ -249,8 +237,39 @@ function updateCardElement(cardElement) {
     buttonContainerElement.append(downloadButtonElement)
 }
 
-function handleDownloadButtonElementClickEvent() {
-    // TODO
+async function handleDownloadButtonElementClickEvent(contentElement) {
+    const linkOrClickElement = contentElement.querySelector(".AspectRatioImageCard_linkOrClick__d_K_4")
+
+    const match = linkOrClickElement.href.match(/^https:\/\/civitai.com\/models\/(\d+)\/[a-zA-Z0-9%&-_=+'.]+$/)
+
+    if (match === null) {
+        return
+    }
+
+    const modelId = match[1]
+    const modelMetadata = await getModelMetadata(modelId)
+
+    if (modelMetadata.modelVersions.length === 1) {
+        const anchorElement = document.createElement("a")
+        anchorElement.href = modelMetadata.modelVersions[0].downloadUrl
+        anchorElement.click()
+    } else {
+        // 
+    }
+}
+
+async function getModelMetadata(modelId) {
+    const response = await fetch(`https://civitai.com/api/v1/models/${modelId}`)
+
+    if (response.ok === false) {
+        cardElement.removeAttribute("data-civitai-extension-for-firefox-observe")
+
+        throw new Error()
+    }
+
+    const modelMetadata = await response.json()
+
+    return modelMetadata
 }
 
 main()
