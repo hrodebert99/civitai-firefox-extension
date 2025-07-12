@@ -88,6 +88,10 @@ function createNextElementObserver(nextElement) {
 }
 
 function handleNextElementObserverCallback(nextElement) {
+    enableDownloadModelButton(nextElement)
+}
+
+function enableDownloadModelButton(nextElement) {
     const url = window.location.href
 
     if (/^https:\/\/civitai.com\/(models(\?[a-zA-Z0-9%&-_=+'.]+|\/[0-9]+(\?modelVersionId=[0-9]+|\/[a-zA-Z0-9%&-_=+'.]+(\?modelVersionId=[0-9]+)?)?)?|search\/models\?[a-zA-Z0-9%&-_=+'.]+|user\/[a-zA-Z0-9_]+(\/models(\?[a-zA-Z0-9%&-_=+'.]+)?)?|tag\/[a-zA-Z0-9%&-_=+'.]+|collections\/[0-9]+(\?[a-zA-Z0-9%&-_=+'.]+)?)?$/.test(url) === false) {
@@ -252,66 +256,7 @@ async function handleDownloadButtonElementClickEvent(contentElement) {
     if (modelMetadata.modelVersions.length === 1) {
         downloadModel(modelMetadata.modelVersions[0].downloadUrl)
     } else {
-        const instructionElement = document.createElement("p")
-        instructionElement.textContent = "Click anywhere to close."
-
-        const modalElement = document.createElement("div")
-        modalElement.style.backgroundColor = "rgba(0, 0, 0, 0.8)"
-        modalElement.style.color = "#ffffff"
-        modalElement.style.position = "fixed"
-        modalElement.style.top = "0"
-        modalElement.style.right = "0"
-        modalElement.style.bottom = "0"
-        modalElement.style.left = "0"
-        modalElement.style.zIndex = "199"
-        modalElement.style.display = "flex"
-        modalElement.style.flexDirection = "column"
-        modalElement.style.justifyContent = "center"
-        modalElement.style.alignItems = "center"
-        modalElement.style.gap = "1rem"
-        modalElement.setAttribute("data-civitai-extension-for-firefox", true)
-        modalElement.addEventListener("click", () => {
-            modalElement.remove()
-        })
-
-        const titleElement = document.createElement("p")
-        titleElement.textContent = "Model Versions"
-        titleElement.style.fontWeight = "bold"
-        
-        const containerElement = document.createElement("div")
-        containerElement.style.backgroundColor = "#444444"
-        containerElement.style.textAlign = "center"
-        containerElement.style.padding = "1rem 2rem"
-        containerElement.style.borderRadius = "1rem"
-        containerElement.style.display = "flex"
-        containerElement.style.flexDirection = "column"
-        containerElement.style.justifyContent = "center"
-        containerElement.style.alignItems = "center"
-        containerElement.style.gap = "1rem"
-        containerElement.addEventListener("click", (event) => {
-            event.stopPropagation()
-        })
-        
-        containerElement.append(titleElement)
-
-        modelMetadata.modelVersions.forEach((modelVersion, index) => {
-            const downloadButtonElement = document.createElement("button")
-            downloadButtonElement.textContent = modelVersion.name
-            downloadButtonElement.style.backgroundColor = "#4488ff"
-            downloadButtonElement.style.width = "fit-content"
-            downloadButtonElement.style.padding = "0 0.5rem"
-            downloadButtonElement.style.borderRadius = "1rem"
-            downloadButtonElement.addEventListener("click", async () => {
-                downloadModel(modelMetadata.modelVersions[index].downloadUrl)
-            })
-
-            containerElement.append(downloadButtonElement)
-        })
-
-        modalElement.append(instructionElement)
-        modalElement.append(containerElement)
-
-        document.body.append(modalElement)
+        createModalElement(modelMetadata)
     }
 }
 
@@ -323,6 +268,69 @@ async function getModelMetadata(modelId) {
     }
 
     return await response.json()
+}
+
+function createModalElement(modelMetadata) {
+    const instructionElement = document.createElement("p")
+    instructionElement.textContent = "Click anywhere to close."
+
+    const modalElement = document.createElement("div")
+    modalElement.style.backgroundColor = "rgba(0, 0, 0, 0.8)"
+    modalElement.style.color = "#ffffff"
+    modalElement.style.position = "fixed"
+    modalElement.style.top = "0"
+    modalElement.style.right = "0"
+    modalElement.style.bottom = "0"
+    modalElement.style.left = "0"
+    modalElement.style.zIndex = "199"
+    modalElement.style.display = "flex"
+    modalElement.style.flexDirection = "column"
+    modalElement.style.justifyContent = "center"
+    modalElement.style.alignItems = "center"
+    modalElement.style.gap = "1rem"
+    modalElement.setAttribute("data-civitai-extension-for-firefox", true)
+    modalElement.addEventListener("click", function() {
+        modalElement.remove()
+    })
+
+    const titleElement = document.createElement("p")
+    titleElement.textContent = "Model Versions"
+    titleElement.style.fontWeight = "bold"
+    
+    const containerElement = document.createElement("div")
+    containerElement.style.backgroundColor = "#444444"
+    containerElement.style.textAlign = "center"
+    containerElement.style.padding = "1rem 2rem"
+    containerElement.style.borderRadius = "1rem"
+    containerElement.style.display = "flex"
+    containerElement.style.flexDirection = "column"
+    containerElement.style.justifyContent = "center"
+    containerElement.style.alignItems = "center"
+    containerElement.style.gap = "1rem"
+    containerElement.addEventListener("click", function(event) {
+        event.stopPropagation()
+    })
+    
+    containerElement.append(titleElement)
+
+    modelMetadata.modelVersions.forEach((modelVersion, index) => {
+        const downloadButtonElement = document.createElement("button")
+        downloadButtonElement.textContent = modelVersion.name
+        downloadButtonElement.style.backgroundColor = "#4488ff"
+        downloadButtonElement.style.width = "fit-content"
+        downloadButtonElement.style.padding = "0 0.5rem"
+        downloadButtonElement.style.borderRadius = "1rem"
+        downloadButtonElement.addEventListener("click", async function() {
+            downloadModel(modelMetadata.modelVersions[index].downloadUrl)
+        })
+
+        containerElement.append(downloadButtonElement)
+    })
+
+    modalElement.append(instructionElement)
+    modalElement.append(containerElement)
+
+    document.body.append(modalElement)
 }
 
 function downloadModel(downloadUrl) {
