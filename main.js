@@ -48,50 +48,206 @@ https://civitai.com/user/{id}/models
 */
 
 function main() {
+    function createBodyElementObserver() {
+        let bodyElementObserver = null
+
+        bodyElementObserver = new MutationObserver(function () {
+            handleBodyElementObserverCallback(bodyElementObserver)
+        })
+
+        bodyElementObserver.observe(document.body, {
+            childList: true,
+            subtree: true
+        })
+    }
+
+    function handleBodyElementObserverCallback(bodyElementObserver) {
+        const nextElement = document.querySelector("#__next")
+
+        if (nextElement === null) {
+            return
+        }
+
+        bodyElementObserver.disconnect()
+
+        createNextElementObserver(nextElement)
+    }
+
+    function createNextElementObserver(nextElement) {
+        const nextElementObserver = new MutationObserver(function () {
+            handleNextElementObserverCallback(nextElement)
+        })
+
+        nextElementObserver.observe(nextElement, {
+            childList: true,
+            subtree: true
+        })
+    }
+
+    function handleNextElementObserverCallback(nextElement) {
+        enableDownloadModelButton(nextElement)
+    }
+
     createBodyElementObserver()
 }
 
-function createBodyElementObserver() {
-    let bodyElementObserver = null
-    
-    bodyElementObserver = new MutationObserver(function() {
-        handleBodyElementObserverCallback(bodyElementObserver)
-    })
+function enableDownloadModelButton(nextElement) {
+    function createGridElementObserver(gridElement) {
+        const gridElementObserver = new MutationObserver(function () {
+            handleGridElementObserverCallback(gridElement)
+        })
 
-    bodyElementObserver.observe(document.body, {
-        childList: true,
-        subtree: true
-    })
-}
-
-function handleBodyElementObserverCallback(bodyElementObserver) {
-    const nextElement = document.querySelector("#__next")
-
-    if (nextElement === null) {
-        return
+        gridElementObserver.observe(gridElement, {
+            childList: true,
+            subtree: true
+        })
     }
 
-    bodyElementObserver.disconnect()
+    function handleGridElementObserverCallback(gridElement) {
+        const cardElementArray = [...gridElement.children]
 
-    createNextElementObserver(nextElement)
-}
+        cardElementArray.forEach(function (cardElement) {
+            updateCardElement(cardElement)
+        })
+    }
 
-function createNextElementObserver(nextElement) {
-    const nextElementObserver = new MutationObserver(function() {
-        handleNextElementObserverCallback(nextElement)
-    })
+    function updateCardElement(cardElement) {
+        const contentElement = cardElement.querySelector(".AspectRatioImageCard_content__IGj_A")
 
-    nextElementObserver.observe(nextElement, {
-        childList: true,
-        subtree: true
-    })
-}
+        if (contentElement === null) {
+            return
+        }
 
-function handleNextElementObserverCallback(nextElement) {
-    enableDownloadModelButton(nextElement)
-}
+        if (contentElement.children.length === 0) {
+            if (cardElement.hasAttribute("data-civitai-extension-for-firefox")) {
+                cardElement.removeAttribute("data-civitai-extension-for-firefox")
+            }
 
-function enableDownloadModelButton(nextElement) {
+            return
+        }
+
+        if (cardElement.hasAttribute("data-civitai-extension-for-firefox")) {
+            return
+        }
+
+        cardElement.setAttribute("data-civitai-extension-for-firefox", true)
+
+        const downloadButtonElement = document.createElement("button")
+        downloadButtonElement.textContent = "Download"
+        downloadButtonElement.style.backgroundColor = "#4488ff"
+        downloadButtonElement.style.padding = "0 0.5rem"
+        downloadButtonElement.style.borderRadius = "1rem"
+        downloadButtonElement.addEventListener("click", function () {
+            handleDownloadButtonElementClickEvent(contentElement)
+        })
+
+        let buttonContainerElement = contentElement.querySelector(".AspectRatioImageCard_header__Mmd__ > div:nth-child(1) > div:nth-child(2)")
+
+        if (buttonContainerElement === null) {
+            buttonContainerElement = contentElement.querySelector(".AspectRatioImageCard_header__Mmd__ > div:nth-child(2) > div:nth-child(2)")
+        }
+
+        buttonContainerElement.append(downloadButtonElement)
+    }
+
+    async function handleDownloadButtonElementClickEvent(contentElement) {
+        const linkOrClickElement = contentElement.querySelector(".AspectRatioImageCard_linkOrClick__d_K_4")
+
+        const match = linkOrClickElement.href.match(/^https:\/\/civitai.com\/models\/(\d+)\/[a-zA-Z0-9%&-_=+'.]+$/)
+
+        if (match === null) {
+            return
+        }
+
+        const modelId = match[1]
+        const modelMetadata = await getModelMetadata(modelId)
+
+        if (modelMetadata.modelVersions.length === 1) {
+            downloadModel(modelMetadata.modelVersions[0].downloadUrl)
+        } else {
+            createModalElement(modelMetadata)
+        }
+    }
+
+    async function getModelMetadata(modelId) {
+        const response = await fetch(`https://civitai.com/api/v1/models/${modelId}`)
+
+        if (response.ok === false) {
+            throw new Error()
+        }
+
+        return await response.json()
+    }
+
+    function createModalElement(modelMetadata) {
+        const instructionElement = document.createElement("p")
+        instructionElement.textContent = "Click anywhere to close."
+
+        const modalElement = document.createElement("div")
+        modalElement.style.backgroundColor = "rgba(0, 0, 0, 0.8)"
+        modalElement.style.color = "#ffffff"
+        modalElement.style.position = "fixed"
+        modalElement.style.top = "0"
+        modalElement.style.right = "0"
+        modalElement.style.bottom = "0"
+        modalElement.style.left = "0"
+        modalElement.style.zIndex = "199"
+        modalElement.style.display = "flex"
+        modalElement.style.flexDirection = "column"
+        modalElement.style.justifyContent = "center"
+        modalElement.style.alignItems = "center"
+        modalElement.style.gap = "1rem"
+        modalElement.setAttribute("data-civitai-extension-for-firefox", true)
+        modalElement.addEventListener("click", function () {
+            modalElement.remove()
+        })
+
+        const titleElement = document.createElement("p")
+        titleElement.textContent = "Model Versions"
+        titleElement.style.fontWeight = "bold"
+
+        const containerElement = document.createElement("div")
+        containerElement.style.backgroundColor = "#444444"
+        containerElement.style.textAlign = "center"
+        containerElement.style.padding = "1rem 2rem"
+        containerElement.style.borderRadius = "1rem"
+        containerElement.style.display = "flex"
+        containerElement.style.flexDirection = "column"
+        containerElement.style.justifyContent = "center"
+        containerElement.style.alignItems = "center"
+        containerElement.style.gap = "1rem"
+        containerElement.addEventListener("click", function (event) {
+            event.stopPropagation()
+        })
+
+        containerElement.append(titleElement)
+
+        modelMetadata.modelVersions.forEach((modelVersion, index) => {
+            const downloadButtonElement = document.createElement("button")
+            downloadButtonElement.textContent = modelVersion.name
+            downloadButtonElement.style.backgroundColor = "#4488ff"
+            downloadButtonElement.style.width = "fit-content"
+            downloadButtonElement.style.padding = "0 0.5rem"
+            downloadButtonElement.style.borderRadius = "1rem"
+            downloadButtonElement.addEventListener("click", async function () {
+                downloadModel(modelMetadata.modelVersions[index].downloadUrl)
+            })
+
+            containerElement.append(downloadButtonElement)
+        })
+
+        modalElement.append(instructionElement)
+        modalElement.append(containerElement)
+
+        document.body.append(modalElement)
+    }
+
+    function downloadModel(downloadUrl) {
+        const anchorElement = document.createElement("a")
+        anchorElement.href = downloadUrl
+        anchorElement.click()
+    }
+
     const url = window.location.href
 
     if (/^https:\/\/civitai.com\/(models(\?[a-zA-Z0-9%&-_=+'.]+|\/[0-9]+(\?modelVersionId=[0-9]+|\/[a-zA-Z0-9%&-_=+'.]+(\?modelVersionId=[0-9]+)?)?)?|search\/models\?[a-zA-Z0-9%&-_=+'.]+|user\/[a-zA-Z0-9_]+(\/models(\?[a-zA-Z0-9%&-_=+'.]+)?)?|tag\/[a-zA-Z0-9%&-_=+'.]+|collections\/[0-9]+(\?[a-zA-Z0-9%&-_=+'.]+)?)?$/.test(url) === false) {
@@ -107,7 +263,7 @@ function enableDownloadModelButton(nextElement) {
             return
         }
 
-        queriesElementArray.forEach(function(queriesElement) {
+        queriesElementArray.forEach(function (queriesElement) {
             const titleElement = queriesElement.querySelector("h2 > div:nth-child(1)")
 
             if (titleElement === null) {
@@ -139,7 +295,7 @@ function enableDownloadModelButton(nextElement) {
             return
         }
 
-        profileSectionElementArray.forEach(function(profileSectionElement) {
+        profileSectionElementArray.forEach(function (profileSectionElement) {
             const titleElement = profileSectionElement.querySelector("p")
 
             if (titleElement === null) {
@@ -172,7 +328,7 @@ function enableDownloadModelButton(nextElement) {
         return
     }
 
-    gridElementArray.forEach(function(gridElement) {
+    gridElementArray.forEach(function (gridElement) {
         if (gridElement.hasAttribute("data-civitai-extension-for-firefox") === true) {
             return
         }
@@ -181,162 +337,6 @@ function enableDownloadModelButton(nextElement) {
 
         createGridElementObserver(gridElement)
     })
-}
-
-function createGridElementObserver(gridElement) {
-    const gridElementObserver = new MutationObserver(function() {
-        handleGridElementObserverCallback(gridElement)
-    })
-
-    gridElementObserver.observe(gridElement, {
-        childList: true,
-        subtree: true
-    })
-}
-
-function handleGridElementObserverCallback(gridElement) {
-    const cardElementArray = [...gridElement.children]
-
-    cardElementArray.forEach(function(cardElement) {
-        updateCardElement(cardElement)
-    })
-}
-
-function updateCardElement(cardElement) {
-    const contentElement = cardElement.querySelector(".AspectRatioImageCard_content__IGj_A")
-
-    if (contentElement === null) {
-        return
-    }
-
-    if (contentElement.children.length === 0) {
-        if (cardElement.hasAttribute("data-civitai-extension-for-firefox")) {
-            cardElement.removeAttribute("data-civitai-extension-for-firefox")
-        }
-        
-        return
-    }
-
-    if (cardElement.hasAttribute("data-civitai-extension-for-firefox")) {
-        return
-    }
-
-    cardElement.setAttribute("data-civitai-extension-for-firefox", true)
-
-    const downloadButtonElement = document.createElement("button")
-    downloadButtonElement.textContent = "Download"
-    downloadButtonElement.style.backgroundColor = "#4488ff"
-    downloadButtonElement.style.padding = "0 0.5rem"
-    downloadButtonElement.style.borderRadius = "1rem"
-    downloadButtonElement.addEventListener("click", function() {
-        handleDownloadButtonElementClickEvent(contentElement)
-    })
-    
-    let buttonContainerElement = contentElement.querySelector(".AspectRatioImageCard_header__Mmd__ > div:nth-child(1) > div:nth-child(2)")
-
-    if (buttonContainerElement === null) {
-        buttonContainerElement = contentElement.querySelector(".AspectRatioImageCard_header__Mmd__ > div:nth-child(2) > div:nth-child(2)")
-    }
-
-    buttonContainerElement.append(downloadButtonElement)
-}
-
-async function handleDownloadButtonElementClickEvent(contentElement) {
-    const linkOrClickElement = contentElement.querySelector(".AspectRatioImageCard_linkOrClick__d_K_4")
-
-    const match = linkOrClickElement.href.match(/^https:\/\/civitai.com\/models\/(\d+)\/[a-zA-Z0-9%&-_=+'.]+$/)
-
-    if (match === null) {
-        return
-    }
-
-    const modelId = match[1]
-    const modelMetadata = await getModelMetadata(modelId)
-
-    if (modelMetadata.modelVersions.length === 1) {
-        downloadModel(modelMetadata.modelVersions[0].downloadUrl)
-    } else {
-        createModalElement(modelMetadata)
-    }
-}
-
-async function getModelMetadata(modelId) {
-    const response = await fetch(`https://civitai.com/api/v1/models/${modelId}`)
-
-    if (response.ok === false) {
-        throw new Error()
-    }
-
-    return await response.json()
-}
-
-function createModalElement(modelMetadata) {
-    const instructionElement = document.createElement("p")
-    instructionElement.textContent = "Click anywhere to close."
-
-    const modalElement = document.createElement("div")
-    modalElement.style.backgroundColor = "rgba(0, 0, 0, 0.8)"
-    modalElement.style.color = "#ffffff"
-    modalElement.style.position = "fixed"
-    modalElement.style.top = "0"
-    modalElement.style.right = "0"
-    modalElement.style.bottom = "0"
-    modalElement.style.left = "0"
-    modalElement.style.zIndex = "199"
-    modalElement.style.display = "flex"
-    modalElement.style.flexDirection = "column"
-    modalElement.style.justifyContent = "center"
-    modalElement.style.alignItems = "center"
-    modalElement.style.gap = "1rem"
-    modalElement.setAttribute("data-civitai-extension-for-firefox", true)
-    modalElement.addEventListener("click", function() {
-        modalElement.remove()
-    })
-
-    const titleElement = document.createElement("p")
-    titleElement.textContent = "Model Versions"
-    titleElement.style.fontWeight = "bold"
-    
-    const containerElement = document.createElement("div")
-    containerElement.style.backgroundColor = "#444444"
-    containerElement.style.textAlign = "center"
-    containerElement.style.padding = "1rem 2rem"
-    containerElement.style.borderRadius = "1rem"
-    containerElement.style.display = "flex"
-    containerElement.style.flexDirection = "column"
-    containerElement.style.justifyContent = "center"
-    containerElement.style.alignItems = "center"
-    containerElement.style.gap = "1rem"
-    containerElement.addEventListener("click", function(event) {
-        event.stopPropagation()
-    })
-    
-    containerElement.append(titleElement)
-
-    modelMetadata.modelVersions.forEach((modelVersion, index) => {
-        const downloadButtonElement = document.createElement("button")
-        downloadButtonElement.textContent = modelVersion.name
-        downloadButtonElement.style.backgroundColor = "#4488ff"
-        downloadButtonElement.style.width = "fit-content"
-        downloadButtonElement.style.padding = "0 0.5rem"
-        downloadButtonElement.style.borderRadius = "1rem"
-        downloadButtonElement.addEventListener("click", async function() {
-            downloadModel(modelMetadata.modelVersions[index].downloadUrl)
-        })
-
-        containerElement.append(downloadButtonElement)
-    })
-
-    modalElement.append(instructionElement)
-    modalElement.append(containerElement)
-
-    document.body.append(modalElement)
-}
-
-function downloadModel(downloadUrl) {
-    const anchorElement = document.createElement("a")
-    anchorElement.href = downloadUrl
-    anchorElement.click()
 }
 
 main()
