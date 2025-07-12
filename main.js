@@ -99,8 +99,12 @@ function handleNextElementObserverCallback(nextElement) {
     if (/^https:\/\/civitai.com\/models\/[0-9]+(\?modelVersionId=[0-9]+|\/[a-zA-Z0-9%&-_=+'.]+(\?modelVersionId=[0-9]+)?)?$/.test(url) === true) {
         const queriesElementArray = nextElement.querySelectorAll(".MasonryContainer_queries__bS_ak")
 
+        if (queriesElementArray.length === 0) {
+            return
+        }
+
         queriesElementArray.forEach(function(queriesElement) {
-            const titleElement = queriesElement.querySelector("div:nth-child(1) > div:nth-child(1) > h2 > div:nth-child(1)")
+            const titleElement = queriesElement.querySelector("h2 > div:nth-child(1)")
 
             if (titleElement === null) {
                 return
@@ -132,7 +136,7 @@ function handleNextElementObserverCallback(nextElement) {
         }
 
         profileSectionElementArray.forEach(function(profileSectionElement) {
-            const titleElement = profileSectionElement.querySelector("div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > p")
+            const titleElement = profileSectionElement.querySelector("p")
 
             if (titleElement === null) {
                 return
@@ -165,20 +169,18 @@ function handleNextElementObserverCallback(nextElement) {
     }
 
     gridElementArray.forEach(function(gridElement) {
-        if (gridElement.hasAttribute("data-civitai-extension-for-firefox-observe") === true) {
+        if (gridElement.hasAttribute("data-civitai-extension-for-firefox") === true) {
             return
         }
 
-        gridElement.setAttribute("data-civitai-extension-for-firefox-observe", true)
+        gridElement.setAttribute("data-civitai-extension-for-firefox", true)
 
         createGridElementObserver(gridElement)
     })
 }
 
 function createGridElementObserver(gridElement) {
-    let gridElementObserver = null
-
-    gridElementObserver = new MutationObserver(function() {
+    const gridElementObserver = new MutationObserver(function() {
         handleGridElementObserverCallback(gridElement)
     })
 
@@ -186,8 +188,6 @@ function createGridElementObserver(gridElement) {
         childList: true,
         subtree: true
     })
-
-    return gridElementObserver
 }
 
 function handleGridElementObserverCallback(gridElement) {
@@ -206,18 +206,18 @@ function updateCardElement(cardElement) {
     }
 
     if (contentElement.children.length === 0) {
-        if (cardElement.hasAttribute("data-civitai-extension-for-firefox-observe")) {
-            cardElement.removeAttribute("data-civitai-extension-for-firefox-observe")
+        if (cardElement.hasAttribute("data-civitai-extension-for-firefox")) {
+            cardElement.removeAttribute("data-civitai-extension-for-firefox")
         }
         
         return
     }
 
-    if (cardElement.hasAttribute("data-civitai-extension-for-firefox-observe")) {
+    if (cardElement.hasAttribute("data-civitai-extension-for-firefox")) {
         return
     }
 
-    cardElement.setAttribute("data-civitai-extension-for-firefox-observe", true)
+    cardElement.setAttribute("data-civitai-extension-for-firefox", true)
 
     const downloadButtonElement = document.createElement("button")
     downloadButtonElement.textContent = "Download"
@@ -250,11 +250,68 @@ async function handleDownloadButtonElementClickEvent(contentElement) {
     const modelMetadata = await getModelMetadata(modelId)
 
     if (modelMetadata.modelVersions.length === 1) {
-        const anchorElement = document.createElement("a")
-        anchorElement.href = modelMetadata.modelVersions[0].downloadUrl
-        anchorElement.click()
+        downloadModel(modelMetadata.modelVersions[0].downloadUrl)
     } else {
-        // 
+        const instructionElement = document.createElement("p")
+        instructionElement.textContent = "Click anywhere to close."
+
+        const modalElement = document.createElement("div")
+        modalElement.style.backgroundColor = "rgba(0, 0, 0, 0.8)"
+        modalElement.style.color = "#ffffff"
+        modalElement.style.position = "fixed"
+        modalElement.style.top = "0"
+        modalElement.style.right = "0"
+        modalElement.style.bottom = "0"
+        modalElement.style.left = "0"
+        modalElement.style.zIndex = "199"
+        modalElement.style.display = "flex"
+        modalElement.style.flexDirection = "column"
+        modalElement.style.justifyContent = "center"
+        modalElement.style.alignItems = "center"
+        modalElement.style.gap = "1rem"
+        modalElement.setAttribute("data-civitai-extension-for-firefox", true)
+        modalElement.addEventListener("click", () => {
+            modalElement.remove()
+        })
+
+        const titleElement = document.createElement("p")
+        titleElement.textContent = "Model Versions"
+        titleElement.style.fontWeight = "bold"
+        
+        const containerElement = document.createElement("div")
+        containerElement.style.backgroundColor = "#444444"
+        containerElement.style.textAlign = "center"
+        containerElement.style.padding = "1rem 2rem"
+        containerElement.style.borderRadius = "1rem"
+        containerElement.style.display = "flex"
+        containerElement.style.flexDirection = "column"
+        containerElement.style.justifyContent = "center"
+        containerElement.style.alignItems = "center"
+        containerElement.style.gap = "1rem"
+        containerElement.addEventListener("click", (event) => {
+            event.stopPropagation()
+        })
+        
+        containerElement.append(titleElement)
+
+        modelMetadata.modelVersions.forEach((modelVersion, index) => {
+            const downloadButtonElement = document.createElement("button")
+            downloadButtonElement.textContent = modelVersion.name
+            downloadButtonElement.style.backgroundColor = "#4488ff"
+            downloadButtonElement.style.width = "fit-content"
+            downloadButtonElement.style.padding = "0 0.5rem"
+            downloadButtonElement.style.borderRadius = "1rem"
+            downloadButtonElement.addEventListener("click", async () => {
+                downloadModel(modelMetadata.modelVersions[index].downloadUrl)
+            })
+
+            containerElement.append(downloadButtonElement)
+        })
+
+        modalElement.append(instructionElement)
+        modalElement.append(containerElement)
+
+        document.body.append(modalElement)
     }
 }
 
@@ -262,14 +319,16 @@ async function getModelMetadata(modelId) {
     const response = await fetch(`https://civitai.com/api/v1/models/${modelId}`)
 
     if (response.ok === false) {
-        cardElement.removeAttribute("data-civitai-extension-for-firefox-observe")
-
         throw new Error()
     }
 
-    const modelMetadata = await response.json()
+    return await response.json()
+}
 
-    return modelMetadata
+function downloadModel(downloadUrl) {
+    const anchorElement = document.createElement("a")
+    anchorElement.href = downloadUrl
+    anchorElement.click()
 }
 
 main()
